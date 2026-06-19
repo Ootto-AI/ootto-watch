@@ -1,12 +1,14 @@
 #!/usr/bin/env python3
-"""ootto-watch — give Claude eyes + ears on any online video.
+"""ootto-watch — give Claude eyes + ears on any online video, then break it down.
 
 Downloads a video (yt-dlp), samples key frames (ffmpeg, duration-aware), and gets a transcript
 (native captions when available, else local faster-whisper). Writes frames + a timestamped
-transcript + an index so Claude can read the visuals and the words aligned on one timeline.
+transcript + an index so Claude can read the visuals and the words aligned on one timeline —
+then analyze the hook, format, structure, pacing and visual layout (see SKILL.md → Analyze).
 
 Usage:
-    python scripts/watch.py "<video-url>" [--out watch_out] [--max-frames 60] [--every SECONDS] [--no-whisper]
+    python scripts/watch.py "<video-url>" [--out watch_out] [--max-frames 80] [--every SECONDS] [--no-whisper]
+    python scripts/watch.py "<url1>" "<url2>" "<url3>" --out batch_out   # batch: many at once → patterns
 
 Requirements: yt-dlp, ffmpeg/ffprobe on PATH. Optional: faster-whisper (pip) for caption-less videos.
 Original implementation — MIT licensed (see LICENSE).
@@ -108,29 +110,52 @@ def transcribe(vid: Path, out: Path, no_whisper: bool) -> str:
     return " ".join(s.text.strip() for s in segs).strip()
 
 
+def watch_one(url: str, out: Path, max_frames: int, every: float, no_whisper: bool) -> dict:
+    """Download + frame-sample + transcribe ONE video into `out`. Returns a manifest row."""
+    out.mkdir(parents=True, exist_ok=True)
+    print(f"→ downloading {url}")
+    vid = download(url, out)
+    dur = duration_s(vid)
+    fps = frame_rate(dur, every, max_frames)
+    print(f"→ {dur:.0f}s video · sampling ~{fps:.2f} fps")
+    n = extract_frames(vid, out, fps)
+    text = transcribe(vid, out, no_whisper)
+    (out / "transcript.txt").write_text(text, encoding="utf-8")
+    print(f"✓ {n} frames · transcript {len(text.split())} words → {out}")
+    return {"url": url, "dir": str(out), "frames": n, "duration_s": round(dur, 1), "words": len(text.split())}
+
+
 def main():
     ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
-    ap.add_argument("url")
+    ap.add_argument("urls", nargs="+", help="one or more video URLs (pass several for a batch)")
     ap.add_argument("--out", default="watch_out")
     ap.add_argument("--max-frames", type=int, default=80)
     ap.add_argument("--every", type=float, default=0.0, help="seconds between frames (0 = auto by duration)")
     ap.add_argument("--no-whisper", action="store_true")
     a = ap.parse_args()
+    base = Path(a.out).resolve()
 
-    out = Path(a.out).resolve()
-    out.mkdir(parents=True, exist_ok=True)
-    print(f"→ downloading {a.url}")
-    vid = download(a.url, out)
-    dur = duration_s(vid)
-    fps = frame_rate(dur, a.every, a.max_frames)
-    print(f"→ {dur:.0f}s video · sampling ~{fps:.2f} fps")
-    n = extract_frames(vid, out, fps)
-    text = transcribe(vid, out, a.no_whisper)
-    (out / "transcript.txt").write_text(text, encoding="utf-8")
-    print(f"\n✓ {n} frames → {out/'frames'}")
-    print(f"✓ transcript ({len(text.split())} words) → {out/'transcript.txt'}")
-    print(f"✓ index → {out/'index.json'}")
-    print("\nNow: read the frames (as images) + transcript.txt, aligned by index.json timestamps, and answer grounded in both.")
+    if len(a.urls) == 1:
+        watch_one(a.urls[0], base, a.max_frames, a.every, a.no_whisper)
+        print(f"\n✓ index → {base / 'index.json'}")
+        print("\nNow: read the frames (as images) + transcript.txt, aligned by index.json timestamps,")
+        print("then write the full breakdown — hook · format · structure · pacing · visual layout (see SKILL.md → Analyze).")
+        return
+
+    # batch: many videos at once → one manifest so Claude can compare them for patterns
+    base.mkdir(parents=True, exist_ok=True)
+    manifest = []
+    for i, u in enumerate(a.urls, 1):
+        sub = base / f"v{i:02d}"
+        print(f"\n=== [{i}/{len(a.urls)}] ===")
+        try:
+            manifest.append(watch_one(u, sub, a.max_frames, a.every, a.no_whisper))
+        except SystemExit as e:
+            print(f"  ! skipped {u}: {e}")
+    (base / "batch.json").write_text(json.dumps(manifest, indent=2))
+    print(f"\n✓ batch of {len(manifest)} videos → {base} (manifest: batch.json)")
+    print("Now: analyze each (SKILL.md → Analyze), then compare ALL of them to surface the shared")
+    print("hook shapes, beat lengths/structure and recurring visual moves — the patterns (SKILL.md → Batch).")
 
 
 if __name__ == "__main__":

@@ -42,3 +42,7 @@ python scripts/watch.py "<url1>" "<url2>" "<url3>" --out batch_out
 
 ## License
 MIT © Ootto-AI. Built by [@jayantcreates.ai](https://instagram.com/jayantcreates.ai). This is an original implementation; the "give Claude video input" idea is a community pattern with several great open-source takes (e.g. `bradautomates/claude-video`, `devinilabs/claude-watch`) — go star those too.
+
+---
+
+Built by **[Ootto](https://ootto.ai)** - the 24/7 AI operator for Instagram. It studies what is working in your niche, writes and renders the reels, posts them, and turns the comments into leads. [See it running](https://ootto.ai/content).

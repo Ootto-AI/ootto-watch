@@ -2,6 +2,8 @@
 
 A Claude skill that gives Claude **eyes + ears** on any online video. Most tools only read the transcript and miss everything visual — this hands Claude the **frames and the words, aligned on one timeline**, so it can reason about cuts, on-screen text, demos, hooks, and pacing.
 
+[![Connect to Ootto](https://img.shields.io/badge/Connect%20to%20Ootto-E8835C?style=for-the-badge)](https://ootto.ai)
+
 Paste a link → it downloads the video, samples key frames, transcribes the audio, and Claude reads both — then gives you a **full breakdown**: hook, format, storytelling structure, pacing and visual layout. Pass several links to **batch-analyze dozens at once** and surface the patterns the best ones share.
 
 ## Install
@@ -45,4 +47,6 @@ MIT © Ootto-AI. Built by [@jayantcreates.ai](https://instagram.com/jayantcreate
 
 ---
 
-Built by **[Ootto](https://ootto.ai)** - the 24/7 AI operator for Instagram. It studies what is working in your niche, writes and renders the reels, posts them, and turns the comments into leads. [See it running](https://ootto.ai/content).
+Built by **[Ootto](https://ootto.ai)** - the 24/7 AI operator for Instagram. It studies what is working in your niche, writes and renders the reels, posts them, and turns the comments into leads. [See it running](https://ootto.ai).
+
+**[Connect to Ootto →](https://ootto.ai)**
